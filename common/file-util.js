@@ -1,0 +1,4 @@
+async function readFile(url) {
+    const response = await fetch(url);
+    return await response.text();
+}
