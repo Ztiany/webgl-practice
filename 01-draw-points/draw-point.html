@@ -8,6 +8,15 @@
 </head>
 
 <body>
+<!--
+canvas 的默认尺寸规则：
+
+    渲染尺寸（绘图缓冲区）	300 × 150	实际像素分辨率，由 width/height 属性（非 CSS）控制
+    显示尺寸（CSS 尺寸）	300 × 150	屏幕上显示的大小，由 CSS 的 width/height 控制
+
+如果 canvas 元素的 CSS 尺寸和渲染尺寸不匹配，浏览器会自动缩放渲染结果以适应显示尺寸，这可能会导致图像模糊或失真。
+使用 css 修改 canvas 的尺寸会影响其显示大小，但不会改变其内部绘图缓冲区的分辨率。
+-->
 <canvas id="canvas"></canvas>
 
 <script type="module">
