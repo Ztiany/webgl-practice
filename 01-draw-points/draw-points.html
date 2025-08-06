@@ -1,0 +1,73 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>01-动态绘制点</title>
+    <link rel="stylesheet" href="../common/common.css"/>
+    <script src="../common/file-util.js"></script>
+    <script src="../common/shader-util.js"></script>
+    <script src="../common/color-util.js"></script>
+</head>
+
+<body>
+<canvas id="canvas"></canvas>
+
+<script type="module">
+    const canvas = document.querySelector('#canvas');
+    const gl = canvas.getContext('webgl') || canvas.getContext("experimental-webgl");
+
+
+    // 获取顶点着色器和片元着色器的源代码
+    const vertexShaderSource = await readFile("./shader/draw-points-vertex.glsl");
+    const fragmentShaderSource = await readFile("./shader/draw-points-frag.glsl");
+
+
+    // 创建着色器和程序
+    const vertexShader = createShaderFromString(gl, gl.VERTEX_SHADER, vertexShaderSource);
+    const fragmentShader = createShaderFromString(gl, gl.FRAGMENT_SHADER, fragmentShaderSource);
+    const programHolder = createProgramHolder(gl, vertexShader, fragmentShader);
+    gl.useProgram(programHolder.program);
+
+
+    // 找到顶点着色器中的变量a_Position
+    const a_Position = gl.getAttribLocation(programHolder.program, 'a_Position');
+    // 找到顶点着色器中的变量a_Screen_Size
+    const a_Screen_Size = gl.getAttribLocation(programHolder.program, 'a_Screen_Size');
+    // 找到片元着色器中的变量u_Color
+    const u_Color = gl.getUniformLocation(programHolder.program, 'u_Color');
+
+
+    // 为顶点着色器中的 a_Screen_Size 传递 canvas 的宽高信息
+    gl.vertexAttrib2f(a_Screen_Size, canvas.width, canvas.height);
+
+    // 存储点击位置的数组。
+    const points = [];
+    canvas.addEventListener('click', e => {
+        const x = e.pageX;
+        const y = e.pageY;
+        points.push({x: x, y: y, color: randomColor()})
+
+        //设置清空画布颜色为黑色。
+        gl.clearColor(0, 0, 0, 1.0);
+        //用上一步设置的清空画布颜色清空画布。
+        gl.clear(gl.COLOR_BUFFER_BIT);
+
+        for (let i = 0; i < points.length; i++) {
+            const color = points[i].color;
+            // 为片元着色器中的 u_Color 传递随机颜色。
+            gl.uniform4f(u_Color, color.r, color.g, color.b, color.a);
+            // 为顶点着色器中的 a_Position 传递顶点坐标。
+            gl.vertexAttrib2f(a_Position, points[i].x, points[i].y);
+            // 绘制点。
+            gl.drawArrays(gl.POINTS, 0, 1);
+        }
+    })
+
+    // 设置清空画布颜色为黑色。
+    gl.clearColor(0.0, 0.0, 0.0, 1.0);
+    // 用上一步设置的清空画布颜色清空画布。
+    gl.clear(gl.COLOR_BUFFER_BIT);
+</script>
+
+</body>
+</html>

@@ -165,7 +165,7 @@ function createShader(gl, type, source) {
     gl.deleteShader(shader);
 }
 
-function createProgram(gl, vertexShader, fragmentShader) {
+function createProgramHolder(gl, vertexShader, fragmentShader) {
     let program = gl.createProgram();
     vertexShader && gl.attachShader(program, vertexShader);
     fragmentShader && gl.attachShader(program, fragmentShader);

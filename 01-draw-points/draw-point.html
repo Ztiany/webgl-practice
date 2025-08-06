@@ -16,7 +16,7 @@
 
 
     // 获取顶点着色器源码
-    const vertexShaderSource = await readFile("./draw-point-vertex.glsl");
+    const vertexShaderSource = await readFile("./shader/draw-point-vertex.glsl");
     // 创建顶点着色器对象
     const vertexShader = gl.createShader(gl.VERTEX_SHADER);
     // 将源码分配给顶点着色器对象
@@ -26,7 +26,7 @@
 
 
     // 获取片元着色器源码
-    const fragmentShaderSource = await readFile("./draw-point-frag.glsl");
+    const fragmentShaderSource = await readFile("./shader/draw-point-frag.glsl");
     // 创建片元着色器程序
     const fragmentShader = gl.createShader(gl.FRAGMENT_SHADER);
     // 将源码分配给片元着色器对象
