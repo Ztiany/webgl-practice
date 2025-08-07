@@ -1,3 +1,7 @@
+// =============================================
+// String Utilities
+// =============================================
+
 function $$(str) {
     if (!str) return null;
     if (str.startsWith('#')) {
@@ -9,6 +13,108 @@ function $$(str) {
     }
     return result;
 }
+
+/**
+ * 获取 WebGL 上下文。
+ * @param canvas
+ * @returns {*}
+ */
+function getContext(canvas) {
+    return canvas.getContext('webgl') || canvas.getContext('experimental-webgl');
+}
+
+// =============================================
+// Shader and Program Utilities
+// =============================================
+
+/**
+ * 创建着色器程序。
+ * @param gl WebGL 上下文。
+ * @param type 着色器类型，gl.VERTEX_SHADER 或 gl.FRAGMENT_SHADER。
+ * @param scriptId 着色器代码的脚本标签 ID。
+ * @returns {WebGLShader|null} 返回着色器对象，如果脚本标签不存在或编译失败则返回 null。
+ */
+function createShaderFromScript(gl, type, scriptId) {
+    let sourceScript = $$('#' + scriptId);
+    if (!sourceScript) {
+        return null;
+    }
+    return createShader(gl, type, sourceScript.innerHTML);
+}
+
+/**
+ * @returns 返回着色器对象
+ * @param gl WebGL 上下文。
+ * @param type 着色器类型，gl.VERTEX_SHADER 或 gl.FRAGMENT_SHADER。
+ * @param str 着色器代码字符串。
+ * @return {WebGLShader|null} 返回着色器对象，如果编译失败则返回 null。
+ */
+function createShaderFromString(gl, type, str) {
+    return createShader(gl, type, str);
+}
+
+function createShader(gl, type, source) {
+    let shader = gl.createShader(type);
+    gl.shaderSource(shader, source);
+    gl.compileShader(shader);
+    // 检测是否编译正常。
+    let success = gl.getShaderParameter(shader, gl.COMPILE_STATUS);
+    if (success) {
+        return shader;
+    }
+    console.error(gl.getShaderInfoLog(shader));
+    gl.deleteShader(shader);
+}
+
+/**
+ * 创建着色器程序持有者。
+ * @param gl WebGL 上下文。
+ * @param vertexShader 顶点着色器。
+ * @param fragmentShader 片段着色器。
+ * @return {{program: WebGLProgram, uniformSetters: {}, attributeSetters: {}}}
+ */
+function createProgramHolder(gl, vertexShader, fragmentShader) {
+    let program = gl.createProgram();
+    vertexShader && gl.attachShader(program, vertexShader);
+    fragmentShader && gl.attachShader(program, fragmentShader);
+    gl.linkProgram(program);
+    let result = gl.getProgramParameter(program, gl.LINK_STATUS);
+    if (result) {
+        console.log('着色器程序创建成功');
+        let uniformSetters = createUniformSetters(gl, program);
+        let attributeSetters = createAttributeSetters(gl, program);
+        return {
+            program: program,
+            uniformSetters: uniformSetters,
+            attributeSetters: attributeSetters
+        };
+    }
+    let errorLog = gl.getProgramInfoLog(program);
+    gl.deleteProgram(program);
+    throw errorLog;
+}
+
+/**
+ * 从 URL 加载着色器程序。
+ * @param gl WebGL 上下文。
+ * @param vertexShaderUrl 顶点着色器的 URL。
+ * @param fragmentShaderUrl 片段着色器的 URL。
+ * @return {Promise<{program: WebGLProgram, uniformSetters: {}, attributeSetters: {}}>}
+ */
+function createProgramHolderFromUrls(gl, vertexShaderUrl, fragmentShaderUrl) {
+    return Promise.all([
+        fetch(vertexShaderUrl).then(response => response.text()),
+        fetch(fragmentShaderUrl).then(response => response.text())
+    ]).then(([vertexShaderSource, fragmentShaderSource]) => {
+        let vertexShader = createShader(gl, gl.VERTEX_SHADER, vertexShaderSource);
+        let fragmentShader = createShader(gl, gl.FRAGMENT_SHADER, fragmentShaderSource);
+        return createProgramHolder(gl, vertexShader, fragmentShader);
+    });
+}
+
+// =============================================
+// Uniform 和 Attribute Setters
+// =============================================
 
 const enums = {
     FLOAT_VEC2: {
@@ -130,61 +236,6 @@ function getKeyFromType(type) {
     }
 }
 
-function getContext(canvas) {
-    return canvas.getContext('webgl') || canvas.getContext('experimental-webgl');
-}
-
-function createShaderFromScript(gl, type, scriptId) {
-    let sourceScript = $$('#' + scriptId);
-    if (!sourceScript) {
-        return null;
-    }
-    return createShader(gl, type, sourceScript.innerHTML);
-}
-
-/**
- * @returns 返回着色器对象
- * @param gl WebGL 上下文。
- * @param type 着色器类型，gl.VERTEX_SHADER 或 gl.FRAGMENT_SHADER。
- * @param str 着色器代码字符串。
- */
-function createShaderFromString(gl, type, str) {
-    return createShader(gl, type, str);
-}
-
-function createShader(gl, type, source) {
-    let shader = gl.createShader(type);
-    gl.shaderSource(shader, source);
-    gl.compileShader(shader);
-    // 检测是否编译正常。
-    let success = gl.getShaderParameter(shader, gl.COMPILE_STATUS);
-    if (success) {
-        return shader;
-    }
-    console.error(gl.getShaderInfoLog(shader));
-    gl.deleteShader(shader);
-}
-
-function createProgramHolder(gl, vertexShader, fragmentShader) {
-    let program = gl.createProgram();
-    vertexShader && gl.attachShader(program, vertexShader);
-    fragmentShader && gl.attachShader(program, fragmentShader);
-    gl.linkProgram(program);
-    let result = gl.getProgramParameter(program, gl.LINK_STATUS);
-    if (result) {
-        console.log('着色器程序创建成功');
-        let uniformSetters = createUniformSetters(gl, program);
-        let attributeSetters = createAttributeSetters(gl, program);
-        return {
-            program: program,
-            uniformSetters: uniformSetters,
-            attributeSetters: attributeSetters
-        };
-    }
-    let errorLog = gl.getProgramInfoLog(program);
-    gl.deleteProgram(program);
-    throw errorLog;
-}
 
 function createUniformSetters(gl, program) {
     let uniformSetters = {};
@@ -254,4 +305,31 @@ function createAttributeSetter(gl, attributeIndex) {
 
 function getVariableCounts(gl, program, type) {
     return gl.getProgramParameter(program, type);
+}
+
+// =============================================
+// buffer Utilities
+// =============================================
+
+/**
+ * 创建一个 WebGL 缓冲区。
+ * @param gl {WebGLRenderingContext}
+ * @param attribute {number} WebGL 属性索引。
+ * @param vertexAttribPointer {Object} 包含属性的大小、类型、归一化、步长和偏移量等信息。
+ * @return {AudioBuffer | WebGLBuffer}
+ */
+function createBuffer(gl, attribute, vertexAttribPointer) {
+    let {size, type, normalize, stride, offset} = vertexAttribPointer;
+    gl.enableVertexAttribArray(attribute);
+    let buffer = gl.createBuffer();
+    gl.bindBuffer(gl.ARRAY_BUFFER, buffer);
+    gl.vertexAttribPointer(
+        attribute,
+        size,
+        type || gl.FLOAT,
+        normalize || false,
+        stride || 0,
+        offset || 0
+    );
+    return buffer;
 }

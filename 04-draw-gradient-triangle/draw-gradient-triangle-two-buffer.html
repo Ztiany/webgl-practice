@@ -1,0 +1,85 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>绘制渐变三角形（双 Buffer）</title>
+    <link rel="stylesheet" href="../common/common.css"/>
+    <script src="../common/file-util.js"></script>
+    <script src="../common/shader-util.js"></script>
+    <script src="../common/color-util.js"></script>
+</head>
+
+<body>
+<canvas id="canvas"></canvas>
+
+<script type="module">
+    const canvas = document.querySelector('#canvas');
+    const gl = canvas.getContext('webgl') || canvas.getContext("experimental-webgl");
+
+
+    // 创建着色器程序。
+    const programHolder = await createProgramHolderFromUrls(
+        gl,
+        "./shader/draw-gradient-triangle-vertex.glsl",
+        "./shader/draw-gradient-triangle-frag.glsl"
+    );
+    gl.useProgram(programHolder.program);
+
+
+    // 找到顶点着色器中的变量 a_Position
+    const a_Position = gl.getAttribLocation(programHolder.program, 'a_Position');
+    // 找到顶点着色器中的变量 a_Color，这个变量用于传递颜色信息。
+    const a_Color = gl.getAttribLocation(programHolder.program, 'a_Color');
+    // 找到顶点着色器中的变量 a_Screen_Size
+    const a_Screen_Size = gl.getAttribLocation(programHolder.program, 'a_Screen_Size');
+    gl.vertexAttrib2f(a_Screen_Size, canvas.width, canvas.height);
+
+
+    // 创建一个缓冲区对象，用于存储顶点数据。
+    const positionBuffer = createBuffer(
+        gl, a_Position, {size: 2 /* 每个顶点有两个坐标 */}
+    )
+
+    // 创建一个缓冲区对象，用于存储颜色数据。
+    const colorBuffer = createBuffer(
+        gl, a_Color, {size: 4 /* 每个颜色有四个分量 RGBA */}
+    )
+
+    // 用于存储三角形的顶点。
+    const positions = [];
+    // 定义颜色数组，用于存储每个顶点的颜色。
+    const colors = [];
+    canvas.addEventListener("click", e => {
+        positions.push(e.pageX, e.pageY);
+
+        // 为每个顶点生成一个随机颜色。
+        let color = randomColor();
+        colors.push(color.r, color.g, color.b, color.a);
+
+        if (positions.length % 6 === 0) {
+            gl.bindBuffer(gl.ARRAY_BUFFER, positionBuffer);
+            gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(positions), gl.DYNAMIC_DRAW);
+
+            gl.bindBuffer(gl.ARRAY_BUFFER, colorBuffer);
+            gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(colors), gl.DYNAMIC_DRAW);
+
+            render();
+        }
+    });
+
+    function render() {
+        // 用上一步设置的清空画布颜色清空画布。
+        gl.clear(gl.COLOR_BUFFER_BIT);
+        if (positions.length > 0) {
+            // 执行绘制操作。
+            gl.drawArrays(gl.TRIANGLES, 0, positions.length / 2);
+        }
+    }
+
+    // 设置清空画布颜色为黑色。
+    gl.clearColor(0, 0, 0, 1);
+    render();
+</script>
+
+</body>
+</html>

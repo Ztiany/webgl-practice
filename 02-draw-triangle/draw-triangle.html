@@ -1,0 +1,88 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>绘制三角形</title>
+    <link rel="stylesheet" href="../common/common.css"/>
+    <script src="../common/file-util.js"></script>
+    <script src="../common/shader-util.js"></script>
+    <script src="../common/color-util.js"></script>
+</head>
+
+<body>
+<canvas id="canvas"></canvas>
+
+<script type="module">
+    const canvas = document.querySelector('#canvas');
+    const gl = canvas.getContext('webgl') || canvas.getContext("experimental-webgl");
+
+
+    // 创建着色器程序。
+    const programHolder = await createProgramHolderFromUrls(
+        gl,
+        "./shader/draw-triangle-vertex.glsl",
+        "./shader/draw-triangle-frag.glsl"
+    );
+    gl.useProgram(programHolder.program);
+
+
+    // 找到顶点着色器中的变量 a_Position
+    const a_Position = gl.getAttribLocation(programHolder.program, 'a_Position');
+    // 找到片元着色器中的变量 u_Color
+    const u_Color = gl.getUniformLocation(programHolder.program, 'u_Color');
+
+
+    // 定义三角形的三个顶点：
+    const positions = [1, 0, 0, 1, 0, 0];
+
+
+    // 创建一个缓冲区对象
+    const buffer = gl.createBuffer();
+    // 将缓冲区对象绑定到目标为 gl.ARRAY_BUFFER 的缓冲区上。
+    gl.bindBuffer(gl.ARRAY_BUFFER, buffer);
+    // 将顶点数据传输到缓冲区对象中。这里使用 Float32Array 将 JavaScript 数组转换为 WebGL 可识别的格式。
+    // gl.STATIC_DRAW 表示数据不会经常改变，适合静态数据。
+    gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(positions), gl.STATIC_DRAW);
+
+
+    // enableVertexAttribArray 方法的作用是启用顶点属性数组。这使得顶点着色器中的 a_Position 变量可以从当前绑定的缓冲区中获取数据。
+    gl.enableVertexAttribArray(a_Position);
+
+
+    // 设置从缓冲区中取数据的方式。
+    // 每次取两个数据
+    const size = 2;
+    // 每个数据的类型是 32 位浮点型
+    const type = gl.FLOAT;
+    // 不需要归一化数据
+    const normalize = false;
+    // 每次迭代运行需要移动“数据数 * 每个数据所占内存”的大小，到下一个数据开始点。
+    const stride = 0;
+    // 从缓冲起始位置开始读取
+    const offset = 0;
+    // 将 a_Position 变量获取数据的缓冲区指向当前绑定的 buffer。
+    gl.vertexAttribPointer(a_Position, size, type, normalize, stride, offset);
+
+
+    // 生成随机颜色并传递给片元着色器。
+    let color = randomColor();
+    gl.uniform4f(u_Color, color.r, color.g, color.b, color.a);
+
+
+    // 设置清空画布颜色为黑色。
+    gl.clearColor(0, 0, 0, 1);
+    gl.clear(gl.COLOR_BUFFER_BIT);
+
+
+    // 绘制图元设置为三角形
+    const primitiveType = gl.TRIANGLES;
+    // 从顶点数组的开始位置取顶点数据
+    const drawOffset = 0;
+    // 因为我们要绘制三个点，所以执行三次顶点绘制操作。
+    const drawCount = 3;
+    // 执行绘制操作。
+    gl.drawArrays(primitiveType, drawOffset, drawCount);
+</script>
+
+</body>
+</html>

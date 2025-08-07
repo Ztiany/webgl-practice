@@ -1,0 +1,81 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>绘制渐变三角形（单 Buffer）</title>
+    <link rel="stylesheet" href="../common/common.css"/>
+    <script src="../common/file-util.js"></script>
+    <script src="../common/shader-util.js"></script>
+    <script src="../common/color-util.js"></script>
+</head>
+
+<body>
+<canvas id="canvas"></canvas>
+
+<script type="module">
+    const canvas = document.querySelector('#canvas');
+    const gl = canvas.getContext('webgl') || canvas.getContext("experimental-webgl");
+
+
+    // 创建着色器程序。
+    const programHolder = await createProgramHolderFromUrls(
+        gl,
+        "./shader/draw-gradient-triangle-vertex.glsl",
+        "./shader/draw-gradient-triangle-frag.glsl"
+    );
+    gl.useProgram(programHolder.program);
+
+
+    // 找到顶点着色器中的变量 a_Position
+    const a_Position = gl.getAttribLocation(programHolder.program, 'a_Position');
+    gl.enableVertexAttribArray(a_Position);
+    // 找到顶点着色器中的变量 a_Color，这个变量用于传递颜色信息。
+    const a_Color = gl.getAttribLocation(programHolder.program, 'a_Color');
+    gl.enableVertexAttribArray(a_Color);
+    // 找到顶点着色器中的变量 a_Screen_Size
+    const a_Screen_Size = gl.getAttribLocation(programHolder.program, 'a_Screen_Size');
+    gl.vertexAttrib2f(a_Screen_Size, canvas.width, canvas.height);
+
+    // 创建一个缓冲区对象，用于存储顶点位置数据和颜色数据。
+    const buffer = gl.createBuffer();
+    // 绑定缓冲区对象到目标 GL.ARRAY_BUFFER。
+    gl.bindBuffer(gl.ARRAY_BUFFER, buffer);
+    // 定义顶点数据格式：每个顶点包含位置（x, y）和颜色（r, g, b, a）。
+    //  - 每个顶点占用 24 字节（2 * 4 字节位置 + 4 * 4 字节颜色）。
+    //  - 位置在前 8 字节，颜色在后 16 字节。因此颜色数据从偏移量 8 字节开始。
+    gl.vertexAttribPointer(a_Position, 2, gl.FLOAT, false, 24, 0);
+    gl.vertexAttribPointer(a_Color, 4, gl.FLOAT, false, 24, 8);
+
+    // 用于存储三角形的顶点。
+    const positionAndColor = [];
+    canvas.addEventListener("click", e => {
+        positionAndColor.push(e.pageX, e.pageY);
+
+        // 为每个顶点生成一个随机颜色。
+        let color = randomColor();
+        positionAndColor.push(color.r, color.g, color.b, color.a);
+
+        // 每三个顶点形成一个三角形，每个顶点还对应一个颜色。因此每个点占用 2 + 4 = 6 个元素。
+        // 每个三角形需要 3 个顶点，3 * 6 = 18 个元素。
+        if (positionAndColor.length % 18 === 0) {
+            gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(positionAndColor), gl.DYNAMIC_DRAW);
+            render();
+        }
+    });
+
+    function render() {
+        // 用上一步设置的清空画布颜色清空画布。
+        gl.clear(gl.COLOR_BUFFER_BIT);
+        if (positionAndColor.length > 0) {
+            // 执行绘制操作。这里的 6 是每个顶点的数据量（位置 2 + 颜色 4）。
+            gl.drawArrays(gl.TRIANGLES, 0, positionAndColor.length / 6);
+        }
+    }
+
+    // 设置清空画布颜色为黑色。
+    gl.clearColor(0, 0, 0, 1);
+    render();
+</script>
+
+</body>
+</html>

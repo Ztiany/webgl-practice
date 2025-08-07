@@ -1,0 +1,95 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>绘制线段</title>
+    <link rel="stylesheet" href="../common/common.css"/>
+    <script src="../common/file-util.js"></script>
+    <script src="../common/shader-util.js"></script>
+    <script src="../common/color-util.js"></script>
+</head>
+
+<body>
+<canvas id="canvas"></canvas>
+
+<script type="module">
+    const canvas = document.querySelector('#canvas');
+    const gl = canvas.getContext('webgl') || canvas.getContext("experimental-webgl");
+
+
+    // 创建着色器程序。
+    const programHolder = await createProgramHolderFromUrls(
+        gl,
+        "./shader/draw-line-vertex.glsl",
+        "./shader/draw-line-frag.glsl"
+    );
+    gl.useProgram(programHolder.program);
+
+
+    // 找到顶点着色器中的变量 a_Position
+    const a_Position = gl.getAttribLocation(programHolder.program, 'a_Position');
+    // 找到顶点着色器中的变量 a_Screen_Size
+    const a_Screen_Size = gl.getAttribLocation(programHolder.program, 'a_Screen_Size');
+    gl.vertexAttrib2f(a_Screen_Size, canvas.width, canvas.height);
+    // 找到片元着色器中的变量 u_Color
+    const u_Color = gl.getUniformLocation(programHolder.program, 'u_Color');
+
+
+    // 创建一个缓冲区对象
+    const buffer = gl.createBuffer();
+    // 将缓冲区对象绑定到目标为 gl.ARRAY_BUFFER 的缓冲区上。
+    gl.bindBuffer(gl.ARRAY_BUFFER, buffer);
+
+
+    // enableVertexAttribArray 方法的作用是启用顶点属性数组。这使得顶点着色器中的 a_Position 变量可以从当前绑定的缓冲区中获取数据。
+    gl.enableVertexAttribArray(a_Position);
+
+
+    // 设置从缓冲区中取数据的方式。
+    // 每次取两个数据
+    const size = 2;
+    // 每个数据的类型是 32 位浮点型
+    const type = gl.FLOAT;
+    // 不需要归一化数据
+    const normalize = false;
+    // 每次迭代运行需要移动“数据数 * 每个数据所占内存”的大小，到下一个数据开始点。
+    const stride = 0;
+    // 从缓冲起始位置开始读取
+    const offset = 0;
+    // 将 a_Position 变量获取数据的缓冲区指向当前绑定的 buffer。
+    gl.vertexAttribPointer(a_Position, size, type, normalize, stride, offset);
+
+
+    // 用于存储线段的顶点。
+    const positions = [];
+    canvas.addEventListener("click", e => {
+        positions.push(e.pageX, e.pageY);
+        if (positions.length % 2 === 0 && positions.length >= 4) {
+            // 将顶点数据传输到缓冲区对象中。这里使用 Float32Array 将 JavaScript 数组转换为 WebGL 可识别的格式。
+            gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(positions), gl.DYNAMIC_DRAW);
+
+            // 生成随机颜色并传递给片元着色器。
+            let color = randomColor();
+            gl.uniform4f(u_Color, color.r, color.g, color.b, color.a);
+
+            // 绘制图元
+            render();
+        }
+    });
+
+    function render() {
+        // 用上一步设置的清空画布颜色清空画布。
+        gl.clear(gl.COLOR_BUFFER_BIT);
+        if (positions.length > 0) {
+            // 执行绘制操作。
+            gl.drawArrays(gl.LINE_STRIP, 0, positions.length / 2);
+        }
+    }
+
+    // 设置清空画布颜色为黑色。
+    gl.clearColor(0, 0, 0, 1);
+    render();
+</script>
+
+</body>
+</html>

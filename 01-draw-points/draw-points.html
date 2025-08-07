@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <title>01-动态绘制点</title>
+    <title>动态绘制点</title>
     <link rel="stylesheet" href="../common/common.css"/>
     <script src="../common/file-util.js"></script>
     <script src="../common/shader-util.js"></script>
@@ -29,11 +29,11 @@
     gl.useProgram(programHolder.program);
 
 
-    // 找到顶点着色器中的变量a_Position
+    // 找到顶点着色器中的变量 a_Position
     const a_Position = gl.getAttribLocation(programHolder.program, 'a_Position');
-    // 找到顶点着色器中的变量a_Screen_Size
+    // 找到顶点着色器中的变量 a_Screen_Size
     const a_Screen_Size = gl.getAttribLocation(programHolder.program, 'a_Screen_Size');
-    // 找到片元着色器中的变量u_Color
+    // 找到片元着色器中的变量 u_Color
     const u_Color = gl.getUniformLocation(programHolder.program, 'u_Color');
 
 
