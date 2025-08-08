@@ -333,3 +333,36 @@ function createBuffer(gl, attribute, vertexAttribPointer) {
     );
     return buffer;
 }
+
+// =============================================
+// Texture Utilities
+// =============================================
+
+/**
+ * 加载图片并创建纹理。
+ * @param gl {WebGLRenderingContext}
+ * @param src {string} 图片的 URL。
+ * @param uniform {WebGLUniformLocation} 着色器中的纹理采样器 uniform 变量。
+ * @param callback {function} 图片加载完成后的回调函数。
+ */
+function loadTexture(gl, src, uniform, callback) {
+    let img = new Image();
+    img.crossOrigin = 'anonymous';
+    img.onload = function () {
+
+        gl.activeTexture(gl.TEXTURE0);
+
+        let texture = gl.createTexture();
+        gl.bindTexture(gl.TEXTURE_2D, texture);
+        gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, gl.RGBA, gl.UNSIGNED_BYTE, img);
+        // 设置图片在放大或者缩小时采用的算法
+        gl.texParameterf(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.LINEAR);
+        gl.texParameterf(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR);
+
+        // 我们为片元着色器的 texture 属性传递 0，此处应该与激活纹理时的通道值保持一致。
+        // 上面激活的是 gl.TEXTURE0，所以这里传递 0。
+        gl.uniform1i(uniform, 0);
+        callback && callback();
+    };
+    img.src = src;
+}

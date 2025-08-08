@@ -1,0 +1,74 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>纹理贴图</title>
+    <link rel="stylesheet" href="../common/common.css"/>
+    <script src="../common/file-util.js"></script>
+    <script src="../common/shader-util.js"></script>
+    <script src="../common/color-util.js"></script>
+</head>
+
+<body>
+<canvas id="canvas" width="340" height="330"></canvas>
+
+<script type="module">
+    const canvas = document.querySelector('#canvas');
+    const gl = canvas.getContext('webgl') || canvas.getContext("experimental-webgl");
+
+
+    // 创建着色器程序。
+    const programHolder = await createProgramHolderFromUrls(
+        gl,
+        "./shader/draw-texture-vertex.glsl",
+        "./shader/draw-texture-frag.glsl"
+    );
+    gl.useProgram(programHolder.program);
+
+
+    // 找到顶点着色器中的变量 a_Position
+    const a_Position = gl.getAttribLocation(programHolder.program, 'a_Position');
+    gl.enableVertexAttribArray(a_Position);
+    // 找到顶点着色器中的变量 a_Screen_Size
+    const a_Screen_Size = gl.getAttribLocation(programHolder.program, 'a_Screen_Size');
+    gl.vertexAttrib2f(a_Screen_Size, canvas.width, canvas.height);
+    // 找到着色器中的全局变量 u_Texture;
+    const u_Texture = gl.getUniformLocation(programHolder.program, "u_Texture");
+    // 找到顶点着色器中的 a_Uv 变量，这是纹理坐标的属性。
+    const a_Uv = gl.getAttribLocation(programHolder.program, "a_Uv");
+    gl.enableVertexAttribArray(a_Uv);
+
+    // 创建一个缓冲区对象，用于存储顶点位置数据和颜色数据。
+    const buffer = gl.createBuffer();
+    // 绑定缓冲区对象到目标 GL.ARRAY_BUFFER。
+    gl.bindBuffer(gl.ARRAY_BUFFER, buffer);
+    // 定义顶点数据格式：每个顶点包含顶点坐标（x, y）和对应的纹理坐标（u, v）。
+    //  - 每个顶点占用 16 字节（2 * 4 字节位置 + 2 * 4 纹理坐标）。
+    //  - 顶点坐标在前 8 字节，纹理坐标在后 8 字节。因此颜色数据从偏移量 8 字节开始。
+    gl.vertexAttribPointer(a_Position, 2, gl.FLOAT, false, 16, 0);
+    gl.vertexAttribPointer(a_Uv, 4, gl.FLOAT, false, 16, 8);
+
+    // 用于存储三角形的顶点。
+    const positions = [
+        // Canvas 坐标（2） --- 纹理坐标（2）
+        30, 30, 0, 1, //V0
+        30, 300, 0, 0, //V1
+        300, 300, 1, 0, //V2
+        30, 30, 0, 1, //V0
+        300, 300, 1, 0, //V2
+        300, 30, 1, 1, //V3
+    ];
+    gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(positions), gl.STATIC_DRAW);
+
+    loadTexture(gl, '../resource/wave.jpg', u_Texture, function () {
+        // 设置清空画布颜色为黑色。
+        gl.clearColor(0, 0, 0, 1);
+        // 用上一步设置的清空画布颜色清空画布。
+        gl.clear(gl.COLOR_BUFFER_BIT);
+        // 执行绘制操作。
+        gl.drawArrays(gl.TRIANGLES, 0, positions.length / 4);
+    })
+</script>
+
+</body>
+</html>
