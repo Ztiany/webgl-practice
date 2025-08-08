@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <title>基本三角形构建矩形（drawArrays）</title>
+    <title>基本三角形构建矩形（drawElements）</title>
     <link rel="stylesheet" href="../common/common.css"/>
     <script src="../common/file-util.js"></script>
     <script src="../common/shader-util.js"></script>
@@ -52,18 +52,30 @@
         30, 30, 255, 0, 0, 1, //V0
         30, 300, 255, 0, 0, 1, //V1
         300, 300, 255, 0, 0, 1, //V2
-        30, 30, 0, 255, 0, 1, //V0
-        300, 300, 0, 255, 0, 1, //V2
         300, 30, 0, 255, 0, 1, //V3
     ];
+
     gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(positionAndColor), gl.STATIC_DRAW);
+
+
+    // 创建一个索引缓冲区对象，用于存储顶点索引。
+    const indicesBuffer = gl.createBuffer();
+    gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, indicesBuffer);
+    // 存储顶点索引的数组
+    const indices = [
+        0, 1, 2, //第一个三角形
+        0, 2, 3, //第二个三角形
+    ];
+    // 创建完 buffer，我们需要绑定，这里要和 ARRAY_BUFFER 区分开来，索引 buffer 的绑定点是 gl.ELEMENT_ARRAY_BUFFER。
+    gl.bufferData(gl.ELEMENT_ARRAY_BUFFER, new Uint16Array(indices), gl.STATIC_DRAW);
+
 
     function render() {
         // 用上一步设置的清空画布颜色清空画布。
         gl.clear(gl.COLOR_BUFFER_BIT);
         if (positionAndColor.length > 0) {
-            // 执行绘制操作。这里的 6 是每个顶点的数据量（位置 2 + 颜色 4）。
-            gl.drawArrays(gl.TRIANGLES, 0, positionAndColor.length / 6);
+            // 执行绘制操作。
+            gl.drawElements(gl.TRIANGLES, 6, gl.UNSIGNED_SHORT, 0);
         }
     }
 
